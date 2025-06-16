@@ -4,66 +4,27 @@
   <meta charset="UTF-8">
   <title>Subsanación de documentos ORSO</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f5f5f5;
-      padding: 20px;
-      text-align: center;
-    }
-    .contenedor {
-      background-color: white;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 700px;
-      margin: auto;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
-    }
-    h2 {
-      color: #2d2d2d;
-      margin-bottom: 10px;
-    }
-    input[type="text"], input[type="file"] {
-      padding: 10px;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 400px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: #00796b;
-      color: white;
-      border: none;
-      padding: 10px 25px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    button:hover {
-      background-color: #004d40;
-    }
-    .loader, #estado, #resultado {
-      margin-top: 20px;
-      font-style: italic;
-      color: #555;
-    }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; padding: 20px; text-align: center; }
+    .contenedor { background: white; padding: 30px; border-radius: 12px; max-width: 700px; margin: auto; box-shadow: 0 0 12px rgba(0, 0, 0, 0.15); }
+    h2 { color: #2d2d2d; }
+    input[type="text"], input[type="file"] { padding: 10px; margin: 10px 0; width: 100%; max-width: 400px; border-radius: 8px; border: 1px solid #ccc; }
+    button { background-color: #00796b; color: white; border: none; padding: 10px 25px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+    button:hover { background-color: #004d40; }
+    #estado, #resultado { margin-top: 20px; font-style: italic; color: #555; }
   </style>
 </head>
 <body>
   <div class="contenedor">
     <h2>Subsanación de documentos ORSO</h2>
-    <input type="text" id="cedula" placeholder="Ingrese su cédula">
-    <br>
+    <input type="text" id="cedula" placeholder="Ingrese su cédula"><br>
     <button onclick="verificar()">Verificar</button>
-
     <div id="archivos" style="display:none;"></div>
     <div id="estado"></div>
     <div id="resultado"></div>
   </div>
 
   <script>
-    // 🔁 CAMBIA este URL si vuelves a implementar tu script
-    const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxhWu1utC7FM7rTBAXRpTSMEjFtsvdIx8kY6H3lZDvEjBYygH7p0x6N4KLVV3VNCyba/exec';
+    const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycby-lM6NQrjWciSjN3eNqSX5zW1MgvqUsIdYInRi2z9ZFUqb2OHJEouC2xLjNWPcwDhZ/exec';
 
     let filaGlobal = null;
     let organizacionGlobal = null;
@@ -71,19 +32,13 @@
 
     function verificar() {
       const cedula = document.getElementById('cedula').value.trim();
-      if (!cedula) {
-        alert('Por favor ingrese una cédula');
-        return;
-      }
+      if (!cedula) return alert('Ingrese la cédula');
 
       document.getElementById('estado').innerText = 'Buscando información...';
-
       fetch(`${URL_APPS_SCRIPT}?cedula=${encodeURIComponent(cedula)}`)
         .then(res => res.json())
         .then(datos => mostrarCampos(datos))
-        .catch(() => {
-          document.getElementById('estado').innerText = 'Error al consultar. Verifique su cédula o intente más tarde.';
-        });
+        .catch(() => document.getElementById('estado').innerText = 'Error al consultar.');
     }
 
     function mostrarCampos(datos) {
@@ -101,34 +56,33 @@
       document.getElementById('estado').innerText = '';
 
       if (datos.cartaIntencion) {
-        contenedor.innerHTML += '<label>Carta de intención:</label><br><input type="file" id="cartaIntencion" accept="application/pdf"><br>';
+        contenedor.innerHTML += '<label>Carta de intención:</label><br><input type="file" id="cartaIntencion"><br>';
         pendientes.push('cartaIntencion');
       }
       if (datos.existenciaActiva) {
-        contenedor.innerHTML += '<label>Existencia activa de la ORSO:</label><br><input type="file" id="existenciaActiva" accept="application/pdf"><br>';
+        contenedor.innerHTML += '<label>Existencia activa:</label><br><input type="file" id="existenciaActiva"><br>';
         pendientes.push('existenciaActiva');
       }
       if (datos.representacionLegal) {
-        contenedor.innerHTML += '<label>Certificado de Cámara de Comercio:</label><br><input type="file" id="representacionLegal" accept="application/pdf"><br>';
+        contenedor.innerHTML += '<label>Certificado Cámara de Comercio:</label><br><input type="file" id="representacionLegal"><br>';
         pendientes.push('representacionLegal');
       }
       if (datos.autoCertificado) {
-        contenedor.innerHTML += '<label>Auto certificado trabajo social:</label><br><input type="file" id="autoCertificado" accept="application/pdf"><br>';
+        contenedor.innerHTML += '<label>Auto certificado:</label><br><input type="file" id="autoCertificado"><br>';
         pendientes.push('autoCertificado');
       }
 
       if (pendientes.length === 0) {
-        contenedor.innerHTML = 'No hay documentos por cargar.';
+        contenedor.innerHTML = 'No hay documentos pendientes.';
       } else {
-        contenedor.innerHTML += '<button onclick="subirArchivos()">Subir Archivos</button>';
+        contenedor.innerHTML += '<br><button onclick="subirArchivos()">Subir Archivos</button>';
       }
 
       contenedor.style.display = 'block';
     }
 
     function subirArchivos() {
-      document.getElementById('estado').innerText = 'Subiendo archivos...';
-      document.getElementById('resultado').innerHTML = '';
+      document.getElementById('estado').innerText = 'Subiendo...';
       let cargados = 0;
 
       pendientes.forEach(tipo => {
@@ -155,14 +109,15 @@
           .then(res => res.json())
           .then(res => {
             cargados++;
+            const resultado = document.getElementById('resultado');
             if (res.exito) {
-              document.getElementById('resultado').innerHTML += `✅ ${tipo} cargado exitosamente.<br>`;
+              resultado.innerHTML += `✅ ${tipo} cargado exitosamente.<br>`;
             } else {
-              document.getElementById('resultado').innerHTML += `❌ Error al subir ${tipo}: ${res.mensaje}<br>`;
+              resultado.innerHTML += `❌ Error en ${tipo}: ${res.mensaje}<br>`;
             }
 
             if (cargados === pendientes.length) {
-              document.getElementById('estado').innerText = 'Proceso finalizado.';
+              document.getElementById('estado').innerText = 'Todos los archivos han sido procesados.';
             }
           });
         };
