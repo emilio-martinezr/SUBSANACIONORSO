@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Subsanación de documentos ORSO</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f5f5;
+      padding: 20px;
+      text-align: center;
+    }
+    .contenedor {
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 700px;
+      margin: auto;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+    }
+    h2 {
+      color: #2d2d2d;
+      margin-bottom: 10px;
+    }
+    input[type="text"], input[type="file"] {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #00796b;
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #004d40;
+    }
+    .loader, #estado, #resultado {
+      margin-top: 20px;
+      font-style: italic;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <h2>Subsanación de documentos ORSO</h2>
+    <input type="text" id="cedula" placeholder="Ingrese su cédula">
+    <br>
+    <button onclick="verificar()">Verificar</button>
+
+    <div id="archivos" style="display:none;"></div>
+    <div id="estado"></div>
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbwE4KBDjDFv0L6SM_gloSNdzngic7NTi97r68xlEjPy8AEJ7bAkq-E0RyD72cnoPsIB/exec';
+
+    let filaGlobal = null;
+    let organizacionGlobal = null;
+    let pendientes = [];
+
+    function verificar() {
+      const cedula = document.getElementById('cedula').value.trim();
+      if (!cedula) {
+        alert('Por favor ingrese una cédula');
+        return;
+      }
+
+      document.getElementById('estado').innerText = 'Buscando información...';
+      
+      fetch(URL_APPS_SCRIPT + '?cedula=' + encodeURIComponent(cedula))
+        .then(res => res.json())
+        .then(datos => mostrarCampos(datos))
+        .catch(() => {
+          document.getElementById('estado').innerText = 'Error al consultar.';
+        });
+    }
+
+    function mostrarCampos(datos) {
+      const contenedor = document.getElementById('archivos');
+      contenedor.innerHTML = '';
+      pendientes = [];
+
+      if (!datos || !datos.fila) {
+        document.getElementById('estado').innerText = 'Cédula no encontrada.';
+        return;
+      }
+
+      filaGlobal = datos.fila;
+      organizacionGlobal = datos.organizacion;
+      document.getElementById('estado').innerText = '';
+
+      if (datos.cartaIntencion) {
+        contenedor.innerHTML += '<label>Carta de intención:</label><br><input type="file" id="cartaIntencion" accept="application/pdf"><br>';
+        pendientes.push('cartaIntencion');
+      }
+      if (datos.existenciaActiva) {
+        contenedor.innerHTML += '<label>Existencia activa de la ORSO:</label><br><input type="file" id="existenciaActiva" accept="application/pdf"><br>';
+        pendientes.push('existenciaActiva');
+      }
+      if (datos.representacionLegal) {
+        contenedor.innerHTML += '<label>Certificado de Cámara de Comercio:</label><br><input type="file" id="representacionLegal" accept="application/pdf"><br>';
+        pendientes.push('representacionLegal');
+      }
+      if (datos.autoCertificado) {
+        contenedor.innerHTML += '<label>Auto certificado trabajo social:</label><br><input type="file" id="autoCertificado" accept="application/pdf"><br>';
+        pendientes.push('autoCertificado');
+      }
+
+      if (pendientes.length === 0) {
+        contenedor.innerHTML = 'No hay documentos por cargar.';
+      } else {
+        contenedor.innerHTML += '<button onclick="subirArchivos()">Subir Archivos</button>';
+      }
+
+      contenedor.style.display = 'block';
+    }
+
+    function subirArchivos() {
+      document.getElementById('estado').innerText = 'Subiendo archivos...';
+      let cargados = 0;
+
+      pendientes.forEach(tipo => {
+        const input = document.getElementById(tipo);
+        const archivo = input?.files[0];
+        if (!archivo) return;
+
+        const lector = new FileReader();
+        lector.onload = function(e) {
+          const base64 = e.target.result.split(',')[1];
+          const payload = {
+            archivo: base64,
+            nombre: archivo.name,
+            fila: filaGlobal,
+            tipo,
+            organizacion: organizacionGlobal
+          };
+
+          fetch(URL_APPS_SCRIPT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(res => {
+            cargados++;
+            if (res.exito) {
+              document.getElementById('resultado').innerHTML += `✅ ${tipo} cargado exitosamente.<br>`;
+            } else {
+              document.getElementById('resultado').innerHTML += `❌ Error al subir ${tipo}: ${res.mensaje}<br>`;
+            }
+
+            if (cargados === pendientes.length) {
+              document.getElementById('estado').innerText = 'Proceso finalizado.';
+            }
+          });
+        };
+        lector.readAsDataURL(archivo);
+      });
+    }
+  </script>
+</body>
+</html>
