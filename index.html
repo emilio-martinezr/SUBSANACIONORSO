@@ -62,6 +62,7 @@
   </div>
 
   <script>
+    // 🔁 CAMBIA este URL si vuelves a implementar tu script
     const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbwZ6VLIAyFx_8A8jAOTyYmlhEBWOU38_JFaGy12OLDvkHKDUmjWecmFggzXJ0-aTY1J/exec';
 
     let filaGlobal = null;
@@ -76,12 +77,12 @@
       }
 
       document.getElementById('estado').innerText = 'Buscando información...';
-      
-      fetch(URL_APPS_SCRIPT + '?cedula=' + encodeURIComponent(cedula))
+
+      fetch(`${URL_APPS_SCRIPT}?cedula=${encodeURIComponent(cedula)}`)
         .then(res => res.json())
         .then(datos => mostrarCampos(datos))
         .catch(() => {
-          document.getElementById('estado').innerText = 'Error al consultar.';
+          document.getElementById('estado').innerText = 'Error al consultar. Verifique su cédula o intente más tarde.';
         });
     }
 
@@ -127,6 +128,7 @@
 
     function subirArchivos() {
       document.getElementById('estado').innerText = 'Subiendo archivos...';
+      document.getElementById('resultado').innerHTML = '';
       let cargados = 0;
 
       pendientes.forEach(tipo => {
